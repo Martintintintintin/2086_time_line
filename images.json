@@ -1,0 +1,11 @@
+{
+  "default": "images/bg-default.png",
+  "years": {
+    "2040": "images/bg/2040.png"
+  },
+  "chapters": {
+    "2040_近地封锁": "images/chapter/2040_近地封锁.png",
+    "2040_总伤亡4.6亿": "images/chapter/2040_总伤亡4.6亿.png",
+    "2041_世界反核战争纪念日": "images/chapter/2041_世界反核战争纪念日.png"
+  }
+}

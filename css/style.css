@@ -1,0 +1,556 @@
+/* ========== Reset & Base ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { overflow-x: hidden; height: 100%; }
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  background: #0a0a0a;
+  color: var(--body-color, #d4d4d4);
+}
+
+/* ========== CSS Variables (set by main.js from config.js) ========== */
+:root {
+  /* 正文文字 */
+  --heading-color: #ffffff;
+  --heading-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  --heading-stroke: none;
+  --heading-font-size: 2rem;
+  --event-title-color: #ffffff;
+  --event-title-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  --event-title-stroke: none;
+  --event-title-font-size: 1.25rem;
+  --body-color: #d4d4d4;
+  --body-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --body-stroke: none;
+  --body-font-size: 16px;
+  --body-line-height: 1.85;
+  --muted-color: rgba(255, 255, 255, 0.4);
+  --highlight-bg: rgba(0, 0, 0, 0.35);
+  --highlight-padding: 2px 10px;
+  --highlight-radius: 4px;
+  --paragraph-spacing: 1.2rem;
+  --entry-spacing: 8rem;
+  --event-spacing: 3rem;
+  --content-width: 70vw;
+
+  /* 背景 */
+  --glass-blur: 6px;
+  --glass-bg: rgba(0, 0, 0, 0.25);
+  --bg-transition-duration: 0.6s;
+  --bg-default-color: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+
+  /* 时间轴 */
+  --timeline-width: 15vw;
+  --timeline-item-height: 200px;
+  --timeline-number-color: rgba(255, 255, 255, 0.35);
+  --timeline-number-hover-color: rgba(255, 255, 255, 0.7);
+  --timeline-number-focus-color: #ffffff;
+  --timeline-number-focus-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+  --timeline-number-font-size: 1.125rem;
+  --timeline-line-color: rgba(255, 255, 255, 0.12);
+  --timeline-line-width: 1px;
+
+  /* 注解 */
+  --anno-panel-width: clamp(300px, 25vw, 500px);
+  --anno-panel-max-height: 80vh;
+  --anno-panel-bg: rgba(255, 255, 255, 0.12);
+  --anno-panel-blur: 10px;
+  --anno-panel-margin-right: 2rem;
+  --anno-panel-title-color: #1a1a1a;
+  --anno-panel-text-color: #444444;
+  --anno-panel-text-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
+  --anno-corner-color: rgba(255, 255, 255, 0.25);
+  --anno-corner-size: 20px;
+  --anno-corner-inset: 8px;
+  --anno-link-color: #4dabf7;
+  --anno-link-hover-color: #74c0fc;
+}
+
+/* ========== Background Layers (z: -6 ~ -4) ========== */
+.bg-wrap {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: -6;
+  overflow: hidden;
+  transform-origin: center center;
+  transform: scale(1.15) translate3d(0, 0, 0);
+  transition: transform 0.08s ease-out;
+  pointer-events: none;
+}
+
+.bg-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity var(--bg-transition-duration, 0.6s) ease-in-out;
+}
+
+.bg-layer.bg-default {
+  opacity: 1;
+  background-image: var(--bg-default-color, linear-gradient(135deg, #0a0a0a, #1a1a2e));
+}
+
+.bg-layer.bg-year { z-index: 2; }
+.bg-layer.bg-chapter { z-index: 3; }
+
+/* ========== Rain Layers (z: -4 ~ -3) ========== */
+.rain-wrap {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -4;
+  pointer-events: none;
+  overflow: hidden;
+  transform-origin: center center;
+  transform: scale(1.15) translate3d(0, 0, 0);
+  transition: transform 0.08s ease-out;
+}
+
+.rain-wrap.rain-near { z-index: -3; }
+
+.fall-line {
+  position: absolute;
+  top: -10px;
+  width: var(--line-width);
+  height: var(--line-height);
+  transform: translate3d(0, 0, 0);
+  border-radius: 1px;
+}
+
+/* ========== Glass Overlay (z: -2) ========== */
+.glass-filter {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -2;
+  backdrop-filter: blur(var(--glass-blur, 6px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 6px));
+  background: var(--glass-bg, rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+}
+
+/* ========== Timeline (z: 10) ========== */
+.timeline {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--timeline-width, 280px);
+  height: 100vh;
+  z-index: 10;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.timeline::-webkit-scrollbar { display: none; }
+
+.timeline-inner {
+  position: relative;
+  padding: 60px 0;
+  min-height: 100vh;
+}
+
+/* Vertical line */
+.timeline-line {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--timeline-line-width, 1px);
+  height: 100%;
+  background: var(--timeline-line-color, rgba(255, 255, 255, 0.12));
+  transform: translateX(-50%);
+}
+
+/* Year entry container */
+.timeline-entry {
+  position: relative;
+  height: var(--timeline-item-height, 200px);
+  display: flex;
+  align-items: center;
+}
+
+/* Alternate left/right positioning */
+.timeline-entry:nth-child(odd) {
+  justify-content: flex-end;
+  padding-right: calc(50% + 4px);
+}
+
+.timeline-entry:nth-child(even) {
+  justify-content: flex-start;
+  padding-left: calc(50% + 4px);
+}
+
+/* Year number / section title */
+.timeline-number {
+  position: relative;
+  font-size: var(--timeline-number-font-size, 1.125rem);
+  font-weight: 600;
+  color: var(--timeline-number-color, rgba(255, 255, 255, 0.35));
+  cursor: pointer;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+  user-select: none;
+  white-space: normal;
+  will-change: transform;
+}
+
+/* Section titles (non-year) use smaller font */
+.timeline-number.section-title {
+  font-size: 0.8rem;
+  max-width: 100%;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.timeline-number:hover {
+  color: var(--timeline-number-hover-color, rgba(255, 255, 255, 0.7));
+}
+
+.timeline-entry.focused .timeline-number {
+  color: var(--timeline-number-focus-color, #ffffff);
+  text-shadow: var(--timeline-number-focus-shadow, 0 0 12px rgba(255, 255, 255, 0.4));
+}
+
+/* Dot on the line */
+.timeline-dot {
+  position: absolute;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-50%);
+  transition: all 0.3s ease;
+}
+
+.timeline-entry.focused .timeline-dot {
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transform: translateX(-50%) scale(1.5);
+}
+
+/* Unified popup (replaces focus-label + hover-popup) */
+.timeline-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 20;
+}
+
+.timeline-entry.popup-active .timeline-popup {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.popup-item {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2px 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.popup-item:hover {
+  color: #ffffff;
+}
+
+.popup-item.focused {
+  color: #ffffff;
+}
+
+/* ========== Content (z: 0) ========== */
+.content {
+  margin-left: var(--timeline-width, 280px);
+  padding: 4rem 3rem 8rem;
+  max-width: var(--content-width, 70vw);
+  position: relative;
+  z-index: 0;
+  transition: margin-right 0.4s ease;
+}
+
+.content.anno-open {
+  margin-right: var(--anno-panel-width, clamp(300px, 25vw, 500px));
+}
+
+.entry-block {
+  margin-bottom: var(--entry-spacing, 8rem);
+}
+
+.entry-title {
+  font-size: var(--heading-font-size, 2rem);
+  font-weight: 700;
+  color: var(--heading-color, #ffffff);
+  margin-bottom: 2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-shadow: var(--heading-shadow, 0 1px 4px rgba(0, 0, 0, 0.7));
+  -webkit-text-stroke: var(--heading-stroke, none);
+}
+
+.event-block {
+  margin-bottom: var(--event-spacing, 3rem);
+  scroll-margin-top: 2rem;
+}
+
+.event-title {
+  font-size: var(--event-title-font-size, 1.25rem);
+  font-weight: 600;
+  color: var(--event-title-color, #ffffff);
+  margin-bottom: 1rem;
+  text-shadow: var(--event-title-shadow, 0 1px 4px rgba(0, 0, 0, 0.7));
+  -webkit-text-stroke: var(--event-title-stroke, none);
+}
+
+.event-text {
+  font-size: var(--body-font-size, 16px);
+  line-height: var(--body-line-height, 1.85);
+  color: var(--body-color, #d4d4d4);
+  text-shadow: var(--body-shadow, 0 1px 3px rgba(0, 0, 0, 0.6));
+  -webkit-text-stroke: var(--body-stroke, none);
+}
+
+.event-text p {
+  margin-bottom: var(--paragraph-spacing, 1.2rem);
+}
+
+/* 文字底衬：每行文字背后的半透明色块，增强对比度 */
+.event-text .p-line {
+  display: inline;
+  background: var(--highlight-bg, rgba(0, 0, 0, 0.35));
+  padding: var(--highlight-padding, 2px 10px);
+  border-radius: var(--highlight-radius, 4px);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* 手动空行 */
+.event-text .br-line {
+  display: block;
+  height: var(--paragraph-spacing, 1.2rem);
+}
+
+/* ========== Blockquote 引用段落 ========== */
+.event-blockquote {
+  margin: 1.5rem 0;
+  padding: 0.5rem 0 0.5rem var(--blockquote-left-pad, 1.5rem);
+  border-left: 3px solid var(--blockquote-border, rgba(255, 255, 255, 0.3));
+  font-style: var(--blockquote-font-style, italic);
+  opacity: var(--blockquote-opacity, 0.9);
+}
+.event-blockquote p {
+  margin-bottom: 0.6rem;
+}
+.event-blockquote p:last-child {
+  margin-bottom: 0;
+}
+.event-blockquote .bq-line {
+  background: var(--blockquote-highlight, rgba(0, 0, 0, 0.25));
+}
+.event-blockquote .bq-gap {
+  height: 0.6rem;
+}
+
+/* ========== Annotation Links ========== */
+.anno-link {
+  color: var(--anno-link-color, #4dabf7);
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(77, 171, 247, 0.4);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.anno-link:hover {
+  color: var(--anno-link-hover-color, #74c0fc);
+  border-bottom-color: var(--anno-link-hover-color, #74c0fc);
+  text-decoration: none;
+}
+
+/* ========== Annotation Panel (z: 10) ========== */
+.anno-panel {
+  position: fixed;
+  right: var(--anno-panel-margin-right, 2rem);
+  top: 50%;
+  width: var(--anno-panel-width, clamp(300px, 25vw, 500px));
+  max-height: var(--anno-panel-max-height, 80vh);
+  overflow-y: auto;
+  transform: translate(100%, -50%);
+  transition: transform 0.4s ease;
+  background: var(--anno-panel-bg, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(var(--anno-panel-blur, 10px));
+  -webkit-backdrop-filter: blur(var(--anno-panel-blur, 10px));
+  padding: 2.5rem 2rem;
+  z-index: 10;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.anno-panel::-webkit-scrollbar { display: none; }
+
+.anno-panel.open {
+  transform: translate(0, -50%);
+}
+
+/* 四角虚线装饰 */
+.anno-panel .corner {
+  position: absolute;
+  width: var(--anno-corner-size, 20px);
+  height: var(--anno-corner-size, 20px);
+  pointer-events: none;
+}
+.anno-panel .corner.tl {
+  top: var(--anno-corner-inset, 8px);
+  left: var(--anno-corner-inset, 8px);
+  border-top: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+  border-left: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+}
+.anno-panel .corner.tr {
+  top: var(--anno-corner-inset, 8px);
+  right: var(--anno-corner-inset, 8px);
+  border-top: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+  border-right: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+}
+.anno-panel .corner.bl {
+  bottom: var(--anno-corner-inset, 8px);
+  left: var(--anno-corner-inset, 8px);
+  border-bottom: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+  border-left: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+}
+.anno-panel .corner.br {
+  bottom: var(--anno-corner-inset, 8px);
+  right: var(--anno-corner-inset, 8px);
+  border-bottom: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+  border-right: 1px dashed var(--anno-corner-color, rgba(255, 255, 255, 0.25));
+}
+
+.anno-title {
+  color: var(--anno-panel-title-color, #1a1a1a);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed rgba(128, 128, 128, 0.25);
+  text-shadow: var(--anno-panel-text-shadow, 0 1px 4px rgba(255, 255, 255, 0.8));
+}
+
+.anno-text {
+  color: var(--anno-panel-text-color, #444444);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-shadow: var(--anno-panel-text-shadow, 0 1px 4px rgba(255, 255, 255, 0.8));
+}
+.anno-text p {
+  margin-bottom: 0.8rem;
+}
+.anno-text p:last-child {
+  margin-bottom: 0;
+}
+
+.anno-img {
+  max-width: 100%;
+  border-radius: 4px;
+  margin-top: 1rem;
+  cursor: zoom-in;
+  transition: opacity 0.2s;
+}
+.anno-img:hover { opacity: 0.85; }
+
+.anno-ref {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(128, 128, 128, 0.25);
+}
+.anno-ref-label {
+  font-size: 0.8rem;
+  color: var(--anno-panel-text-color, #444444);
+  opacity: 0.6;
+  margin-bottom: 0.4rem;
+}
+.anno-ref-url {
+  display: block;
+  color: var(--anno-link-color, #4dabf7);
+  font-size: 0.8rem;
+  font-family: "Consolas", "Monaco", monospace;
+  word-break: break-all;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: color 0.2s;
+  user-select: all;
+  -webkit-user-select: all;
+}
+.anno-ref-url:hover {
+  color: var(--anno-link-hover-color, #74c0fc);
+  text-decoration: underline;
+}
+
+/* ========== Image Lightbox (z: 100) ========== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  background: rgba(0, 0, 0, 0.88);
+  cursor: zoom-out;
+}
+.lightbox.open {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.lightbox-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* ========== Mobile Warning ========== */
+.mobile-warning {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: #0a0a0a;
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  color: #888;
+  font-size: 0.95rem;
+}
+
+/* ========== Loading Screen ========== */
+.loading-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: #0a0a0a;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease;
+}
+
+.loading-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-text {
+  color: var(--muted-color, rgba(255, 255, 255, 0.4));
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+}
+
+/* ========== Mobile Detection ========== */
+@media (max-width: 768px) and (orientation: portrait) {
+  .mobile-warning { display: flex; }
+  .timeline, .content, .bg-wrap, .rain-wrap, .glass-filter { display: none; }
+}
