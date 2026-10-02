@@ -11,6 +11,7 @@ Chronicle.Focus = {
   currentEntry: 0,
   currentEvent: null,
   debounceTimer: null,
+  paused: false,
 
   init(content) {
     this.content = content;
@@ -18,6 +19,7 @@ Chronicle.Focus = {
 
     // Use IntersectionObserver to detect which event is in view
     this.observer = new IntersectionObserver((entries) => {
+      if (this.paused) return;
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const ei = parseInt(entry.target.dataset.entryIndex);
@@ -42,6 +44,28 @@ Chronicle.Focus = {
         parseInt(first.dataset.eventIndex)
       );
     }
+  },
+
+  /** Find the event element closest to the top of the viewport */
+  getTopEventElement() {
+    const events = Chronicle.TextRenderer.getEventElements();
+    let best = null;
+    let bestTop = Infinity;
+    for (const el of events) {
+      const rect = el.getBoundingClientRect();
+      if (rect.top >= 0 && rect.top < bestTop) {
+        bestTop = rect.top;
+        best = el;
+      }
+    }
+    // If nothing is below the viewport top, fall back to the last element above
+    if (!best && events.length > 0) {
+      for (let i = events.length - 1; i >= 0; i--) {
+        const rect = events[i].getBoundingClientRect();
+        if (rect.top < 0) { best = events[i]; break; }
+      }
+    }
+    return best;
   },
 
   _debounceFocus(ei, vi) {

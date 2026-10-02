@@ -1,4 +1,4 @@
-# 2086 编年史 · 正史
+# 2086 编年史
 
 一个基于飞书文档自动同步的互动式时间轴网页小说。
 
@@ -44,15 +44,3 @@
     ├── annotation.js   # 注解面板
     └── rain.js         # 雨丝动效
 ```
-
-## 更新流程
-
-1. 在飞书文档中编辑正文和注解
-2. 运行同步脚本：`node sync_chronicle.js`
-3. 推送到 GitHub：
-   ```
-   git add .
-   git commit -m "update content"
-   git push
-   ```
-4. GitHub Pages 自动构建，1-2 分钟后线上更新

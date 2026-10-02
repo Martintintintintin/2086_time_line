@@ -13,6 +13,8 @@ Chronicle.Annotation = {
   contentEl: null,
   lightbox: null,
   lightboxImg: null,
+  scrollAnchor: null,
+  scrollOffset: 0,
 
   init(annotationsData) {
     this.data = annotationsData || {};
@@ -71,6 +73,11 @@ Chronicle.Annotation = {
     const anno = this.data[key];
     if (!anno || !this.panel || !this.content) return;
 
+    // Pause focus tracking during layout shift
+    if (Chronicle.Focus) {
+      Chronicle.Focus.paused = true;
+    }
+
     let html = `<div class="anno-title">${this._escape(anno.term || key)}</div>`;
 
     if (anno.text) {
@@ -97,8 +104,32 @@ Chronicle.Annotation = {
   },
 
   hide() {
+    // Record scroll anchor BEFORE closing (content is still in narrow layout)
+    let anchor = null;
+    let anchorOffset = 0;
+    if (Chronicle.Focus) {
+      anchor = Chronicle.Focus.getTopEventElement();
+      if (anchor) {
+        anchorOffset = anchor.getBoundingClientRect().top;
+      }
+    }
+
     if (this.panel) this.panel.classList.remove('open');
     if (this.contentEl) this.contentEl.classList.remove('anno-open');
+
+    // After the CSS transition completes, restore scroll position and unpause focus
+    setTimeout(() => {
+      if (anchor) {
+        const newTop = anchor.getBoundingClientRect().top;
+        const delta = newTop - anchorOffset;
+        if (Math.abs(delta) > 2) {
+          window.scrollBy(0, delta);
+        }
+      }
+      if (Chronicle.Focus) {
+        Chronicle.Focus.paused = false;
+      }
+    }, 450);
   },
 
   _openLightbox(src) {
